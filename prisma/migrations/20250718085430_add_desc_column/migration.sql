@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Product" ALTER COLUMN "desc" DROP NOT NULL,
+ALTER COLUMN "desc" DROP DEFAULT;

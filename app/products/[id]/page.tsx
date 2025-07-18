@@ -1,41 +1,53 @@
-import { notFound } from 'next/navigation'
-
-
 interface ProductPageProps {
   params: { id: string };
 }
 
-const productDetails: Record<number, { name: string; desc: string; emoji: string }> = {
-  1: {
-    name: "Strawberry Moo",
-    desc: "Manis dan segar seperti jatuh cinta! Dengan rasa stroberi yang lembut 🍓",
-    emoji: "🍓",
-  },
-  2: {
-    name: "Banana Moo",
-    desc: "Creamy dan lembut, cocok buat harimu yang tenang 🍌",
-    emoji: "🍌",
-  },
-  3: {
-    name: "Matcha Moo",
-    desc: "Matcha calm vibes tapi tetap kasih semangat! 🍵",
-    emoji: "🍵",
-  },
+type Product = {
+  id: number;
+  name: string;
+  price: number;
+  desc: string;
 };
 
-export default function ProductDetailPage({ params }: ProductPageProps) {
-  const id = parseInt(params.id);
-  const product = productDetails[id];
+export default async function ProductDetailPage({ params }: ProductPageProps) {
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+
+  let product: Product | null = null;
+
+  try {
+    const res = await fetch(`${baseUrl}/api/products/${params.id}`, {
+      cache: "no-store",
+    });
+
+    if (!res.ok) throw new Error("Failed to fetch");
+
+    product = await res.json();
+  } catch (err) {
+    console.error("Error fetching product:", err);
+  }
 
   if (!product) {
-    notFound();
+    return (
+      <section className="text-center py-8">
+        <h1 className="text-2xl font-bold text-red-500">Product Not Found</h1>
+        <a href="/products" className="mt-4 inline-block text-pink-500 hover:underline">
+          ← Back to Products
+        </a>
+      </section>
+    );
   }
 
   return (
-    <section className="text-center">
-      <div className="text-6xl mb-4">{product.emoji}</div>
+    <section className="text-center py-8">
+      <div className="text-6xl mb-4">🥛</div>
       <h1 className="text-4xl font-bold text-pink-600 mb-2">{product.name}</h1>
       <p className="text-gray-700 text-lg max-w-xl mx-auto">{product.desc}</p>
+      <p className="text-lg font-bold mt-4">
+        Rp {product.price.toLocaleString()}
+      </p>
+      <a href="/products" className="mt-4 inline-block text-pink-500 hover:underline">
+        ← Back to Products
+      </a>
     </section>
   );
 }
