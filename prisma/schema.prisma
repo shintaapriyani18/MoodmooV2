@@ -14,12 +14,33 @@ datasource db {
 }
 
 model Product {
-  id         Int      @id @default(autoincrement())
-  name       String
-  price      Int
-  desc       String? 
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt @default(now())
-  deletedAt  DateTime?
+  id        Int       @id @default(autoincrement())
+  name      String
+  price     Int
+  desc      String?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now()) @updatedAt
+  deletedAt DateTime?
 }
 
+model User {
+  id         String    @id @default(cuid())
+  name       String
+  email      String    @unique
+  password   String
+  role       String    @default("user")
+  verifiedAt DateTime?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+  otp        Otp[]
+}
+
+model Otp {
+  id        String   @id @default(cuid())
+  code      String
+  expiry    DateTime
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

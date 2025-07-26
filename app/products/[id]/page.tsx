@@ -2,20 +2,14 @@ interface ProductPageProps {
   params: { id: string };
 }
 
-type Product = {
-  id: number;
-  name: string;
-  price: number;
-  desc: string;
-};
-
 export default async function ProductDetailPage({ params }: ProductPageProps) {
+  const { id } = await params; 
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
-  let product: Product | null = null;
+  let product = null;
 
   try {
-    const res = await fetch(`${baseUrl}/api/products/${params.id}`, {
+    const res = await fetch(`${baseUrl}/api/products/${id}`, {
       cache: "no-store",
     });
 

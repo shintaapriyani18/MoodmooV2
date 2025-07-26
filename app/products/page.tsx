@@ -2,6 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "@/lib/store";
+import { addToCart } from "@/lib/cartSlice";
+import toast, { Toaster } from "react-hot-toast";
+import { useSession } from "next-auth/react";
 
 type Products = {
   id: number;
@@ -11,6 +17,10 @@ type Products = {
 };
 
 export default function ProductPage() {
+  const { data: session, status } = useSession();
+  const router = useRouter();
+  const dispatch = useDispatch<AppDispatch>();
+
   const [products, setProducts] = useState<Products[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -34,10 +44,9 @@ export default function ProductPage() {
       method: "POST",
       body: JSON.stringify({ name, price, desc }),
     });
+    toast.success("Product added successfully!");
     setShowAddModal(false);
-    setName("");
-    setPrice(0);
-    setDesc("");
+    resetForm();
     fetchProducts();
   };
 
@@ -47,11 +56,9 @@ export default function ProductPage() {
       method: "PUT",
       body: JSON.stringify({ name, price, desc }),
     });
+    toast.success("Product updated successfully!");
     setShowEditModal(false);
-    setEditId(null);
-    setName("");
-    setPrice(0);
-    setDesc("");
+    resetForm();
     fetchProducts();
   };
 
@@ -59,6 +66,7 @@ export default function ProductPage() {
     await fetch(`/api/products/${id}`, {
       method: "DELETE",
     });
+    toast.success("Product deleted successfully!");
     fetchProducts();
   };
 
@@ -70,16 +78,50 @@ export default function ProductPage() {
     setShowEditModal(true);
   };
 
+  const handleAddToCart = (p: Products) => {
+    if (!session) {
+      router.push("/auth/signin");
+      return;
+    }
+    
+    dispatch(
+      addToCart({
+        id: p.id.toString(),
+        name: p.name,
+        price: p.price,
+        qty: 1,
+      })
+    );
+    toast.success("Product added to cart!");
+  };
+
+  const resetForm = () => {
+    setName("");
+    setPrice(0);
+    setDesc("");
+    setEditId(null);
+  };
+
+  const isAdmin = session?.user?.role === "admin";
+  const isUser = session?.user?.role === "user";
+
+  if (status === "loading") {
+    return <div>Loading...</div>;
+  }
+
   return (
     <section className="p-4">
+      <Toaster />
       <h1 className="text-4xl font-bold text-pink-600 mb-6">Varian Moodmoo</h1>
 
-      <button
-        onClick={() => setShowAddModal(true)}
-        className="mb-4 px-4 py-2 bg-pink-500 text-white rounded"
-      >
-        + Add Product
-      </button>
+      {isAdmin && (
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="mb-4 px-4 py-2 bg-pink-500 text-white rounded"
+        >
+          + Add Product
+        </button>
+      )}
 
       <div className="grid md:grid-cols-3 gap-6">
         {products.map((p) => (
@@ -93,18 +135,22 @@ export default function ProductPage() {
             </h2>
             <p className="text-gray-500 text-sm text-center mb-2">{p.desc}</p>
             <div className="flex gap-2">
-              <button
-                onClick={() => openEditModal(p)}
-                className="text-green-500 hover:underline"
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => handleDelete(p.id)}
-                className="text-red-500 hover:underline"
-              >
-                Delete
-              </button>
+              {isAdmin && (
+                <>
+                  <button
+                    onClick={() => openEditModal(p)}
+                    className="text-green-500 hover:underline"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    onClick={() => handleDelete(p.id)}
+                    className="text-red-500 hover:underline"
+                  >
+                    Delete
+                  </button>
+                </>
+              )}
               <Link
                 href={`/products/${p.id}`}
                 className="text-blue-500 hover:underline"
@@ -112,11 +158,16 @@ export default function ProductPage() {
                 Detail
               </Link>
             </div>
+            <button
+              onClick={() => handleAddToCart(p)}
+              className="mt-2 px-2 py-1 bg-pink-500 text-white rounded text-sm"
+            >
+              + Add to Cart
+            </button>
           </div>
         ))}
       </div>
 
-      {/* Add Modal */}
       {showAddModal && (
         <Modal
           title="Add Product"
@@ -131,7 +182,6 @@ export default function ProductPage() {
         />
       )}
 
-      {/* Edit Modal */}
       {showEditModal && (
         <Modal
           title="Edit Product"
@@ -149,7 +199,7 @@ export default function ProductPage() {
   );
 }
 
-// Modal Component
+// Modal Component remains the same
 type ModalProps = {
   title: string;
   onClose: () => void;
