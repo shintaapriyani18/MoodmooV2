@@ -1,30 +1,24 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
 
-// Gunakan context untuk mengambil params
-export async function GET(req: NextRequest, context: { params: { id: string } }) {
+export async function GET(_req: Request, context: { params: { id: string } }) {
   const id = Number(context.params.id);
-  if (isNaN(id)) {
-    return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
-  }
+
+  if (!id) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 
   const product = await prisma.product.findUnique({
     where: { id },
   });
 
-  if (!product) {
-    return NextResponse.json({ error: 'Not found' }, { status: 404 });
-  }
+  if (!product) return NextResponse.json({ error: 'Not found' }, { status: 404 });
 
   return NextResponse.json(product);
 }
 
-export async function PUT(req: NextRequest, context: { params: { id: string } }) {
+export async function PUT(req: Request, context: { params: { id: string } }) {
   const id = Number(context.params.id);
-  if (isNaN(id)) {
-    return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
-  }
+
+  if (!id) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 
   const { name, price, desc } = await req.json();
 
@@ -36,11 +30,10 @@ export async function PUT(req: NextRequest, context: { params: { id: string } })
   return NextResponse.json(updated);
 }
 
-export async function DELETE(req: NextRequest, context: { params: { id: string } }) {
+export async function DELETE(_req: Request, context: { params: { id: string } }) {
   const id = Number(context.params.id);
-  if (isNaN(id)) {
-    return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
-  }
+
+  if (!id) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
 
   const deleted = await prisma.product.delete({
     where: { id },

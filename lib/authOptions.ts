@@ -4,8 +4,7 @@ import bcrypt from "bcrypt";
 import { z } from "zod";
 import { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma"; // Import from your existing Prisma instance
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -16,28 +15,33 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const schema = z.object({
-          email: z.string().email(),
-          password: z.string().min(6),
-        });
+        try {
+          const schema = z.object({
+            email: z.string().email(),
+            password: z.string().min(6),
+          });
 
-        const { email, password } = schema.parse(credentials);
+          const { email, password } = schema.parse(credentials);
 
-        const user = await prisma.user.findUnique({ where: { email } });
+          const user = await prisma.user.findUnique({ where: { email } });
 
-        if (!user) throw new Error("No user found");
-        if (!user.password) throw new Error("No password set for user");
-        if (!user.verifiedAt) throw new Error("User not verified");
+          if (!user) throw new Error("No user found");
+          if (!user.password) throw new Error("No password set for user");
+          if (!user.verifiedAt) throw new Error("User not verified");
 
-        const valid = await bcrypt.compare(password, user.password);
-        if (!valid) throw new Error("Invalid password");
+          const valid = await bcrypt.compare(password, user.password);
+          if (!valid) throw new Error("Invalid password");
 
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-        };
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+          };
+        } catch (error) {
+          console.error("Authorization error:", error);
+          return null;
+        }
       },
     }),
   ],
