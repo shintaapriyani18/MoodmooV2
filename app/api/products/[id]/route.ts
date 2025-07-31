@@ -1,15 +1,19 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
-export async function GET(_req: Request, { params }: { params: { id: string } }) {
-  const id = Number(params.id);
+export async function GET(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const numericId = Number(id);
 
-  if (!id) {
+  if (!numericId) {
     return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
   }
 
   const product = await prisma.product.findUnique({
-    where: { id },
+    where: { id: numericId },
   });
 
   if (!product) {
@@ -19,32 +23,40 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
   return NextResponse.json(product);
 }
 
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
-  const id = Number(params.id);
+export async function PUT(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const numericId = Number(id);
 
-  if (!id) {
+  if (!numericId) {
     return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
   }
 
   const { name, price, desc } = await req.json();
 
   const updated = await prisma.product.update({
-    where: { id },
+    where: { id: numericId },
     data: { name, price, desc },
   });
 
   return NextResponse.json(updated);
 }
 
-export async function DELETE(_req: Request, { params }: { params: { id: string } }) {
-  const id = Number(params.id);
+export async function DELETE(
+  _req: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  const { id } = await params;
+  const numericId = Number(id);
 
-  if (!id) {
+  if (!numericId) {
     return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
   }
 
   const deleted = await prisma.product.delete({
-    where: { id },
+    where: { id: numericId },
   });
 
   return NextResponse.json(deleted);
