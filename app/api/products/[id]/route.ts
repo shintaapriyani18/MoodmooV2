@@ -1,43 +1,88 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
-export async function GET(_req: Request, context: { params: { id: string } }) {
-  const id = Number(context.params.id);
+// Type untuk parameter route dengan konversi ke number
+type RouteParams = {
+  params: {
+    id: string; // Tetap string dari URL, tapi akan dikonversi
+  };
+};
 
-  if (!id) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
+export async function GET(request: Request, { params }: RouteParams) {
+  try {
+    const id = parseInt(params.id, 10);
+    if (isNaN(id)) {
+      return NextResponse.json(
+        { error: 'ID harus berupa angka' },
+        { status: 400 }
+      );
+    }
 
-  const product = await prisma.product.findUnique({
-    where: { id },
-  });
+    const product = await prisma.product.findUnique({
+      where: { id },
+    });
 
-  if (!product) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+    if (!product) {
+      return NextResponse.json(
+        { error: 'Produk tidak ditemukan' },
+        { status: 404 }
+      );
+    }
 
-  return NextResponse.json(product);
+    return NextResponse.json(product);
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Terjadi kesalahan server' },
+      { status: 500 }
+    );
+  }
 }
 
-export async function PUT(req: Request, context: { params: { id: string } }) {
-  const id = Number(context.params.id);
+export async function PUT(request: Request, { params }: RouteParams) {
+  try {
+    const id = parseInt(params.id, 10);
+    if (isNaN(id)) {
+      return NextResponse.json(
+        { error: 'ID harus berupa angka' },
+        { status: 400 }
+      );
+    }
 
-  if (!id) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
+    const { name, price, desc } = await request.json();
 
-  const { name, price, desc } = await req.json();
+    const updatedProduct = await prisma.product.update({
+      where: { id },
+      data: { name, price, desc },
+    });
 
-  const updated = await prisma.product.update({
-    where: { id },
-    data: { name, price, desc },
-  });
-
-  return NextResponse.json(updated);
+    return NextResponse.json(updatedProduct);
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Gagal memperbarui produk' },
+      { status: 500 }
+    );
+  }
 }
 
-export async function DELETE(_req: Request, context: { params: { id: string } }) {
-  const id = Number(context.params.id);
+export async function DELETE(request: Request, { params }: RouteParams) {
+  try {
+    const id = parseInt(params.id, 10);
+    if (isNaN(id)) {
+      return NextResponse.json(
+        { error: 'ID harus berupa angka' },
+        { status: 400 }
+      );
+    }
 
-  if (!id) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
+    await prisma.product.delete({
+      where: { id },
+    });
 
-  const deleted = await prisma.product.delete({
-    where: { id },
-  });
-
-  return NextResponse.json(deleted);
+    return new NextResponse(null, { status: 204 });
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Gagal menghapus produk' },
+      { status: 500 }
+    );
+  }
 }
