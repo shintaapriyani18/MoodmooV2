@@ -6,9 +6,10 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import LoaderSpinner from "@/components/loader-spinner";
 import BaseAlert from "@/components/base-alert";
+import { getSession } from "next-auth/react";
 
 export default function Page() {
-  const router = useRouter(); // tambahkan ini
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [alert, setAlert] = useState({
@@ -20,6 +21,7 @@ export default function Page() {
 
   const handleLogin = async () => {
     setIsLoading(true);
+
     const res = await signIn("credentials", {
       redirect: false,
       email,
@@ -35,7 +37,15 @@ export default function Page() {
       });
       setIsLoading(false);
     } else {
-      router.push("/dashboard"); // ganti ke halaman tujuanmu
+      // Ambil session setelah login berhasil
+      const session = await getSession();
+
+      if (session?.user?.role === "admin") {
+        router.push("/dashboard");
+      } else {
+        router.push("/");
+      }
+
       setIsLoading(false);
     }
   };

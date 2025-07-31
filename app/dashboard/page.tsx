@@ -2,14 +2,32 @@
 
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { FiPackage, FiUsers, FiDollarSign, FiEdit, FiTrash2, FiPlus } from "react-icons/fi";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
+import {
+  FiPackage,
+  FiUsers,
+  FiDollarSign,
+} from "react-icons/fi";
+
+type Product = {
+  id: number;
+  name: string;
+  price: number;
+  desc: string;
+};
+
+type Stats = {
+  totalUsers: number;
+  totalProducts: number;
+};
 
 export default function Dashboard() {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState("products");
+  const [products, setProducts] = useState<Product[]>([]);
+  const [stats, setStats] = useState<Stats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   // Redirect jika belum login
   useEffect(() => {
@@ -18,7 +36,38 @@ export default function Dashboard() {
     }
   }, [status, router]);
 
-  if (status !== "authenticated") {
+  // Fetch product & stats
+  useEffect(() => {
+    const fetchAll = async () => {
+      try {
+        const [productRes, statsRes] = await Promise.all([
+          fetch("/api/products"),
+          fetch("/api/stats"),
+        ]);
+
+        if (!productRes.ok || !statsRes.ok) {
+          throw new Error("Gagal ambil data");
+        }
+
+        const productData = await productRes.json();
+        const statsData = await statsRes.json();
+
+        setProducts(productData);
+        setStats(statsData);
+      } catch (err) {
+        console.error(err);
+        setError("Gagal menampilkan data");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (status === "authenticated") {
+      fetchAll();
+    }
+  }, [status]);
+
+  if (status === "loading" || loading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-pink-500"></div>
@@ -26,38 +75,33 @@ export default function Dashboard() {
     );
   }
 
-  // Data dummy
-  const products = [
-    { id: 1, name: "Moodmoo Strawberry", price: 25000, stock: 42, sales: 128 },
-    { id: 2, name: "Moodmoo Chocolate", price: 27000, stock: 35, sales: 95 },
-    { id: 3, name: "Moodmoo Vanilla", price: 23000, stock: 28, sales: 76 },
-  ];
+  if (error) return <div>{error}</div>;
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      {/* Stats Cards - Lebar penuh */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 w-full">
-        <div className="bg-white p-6 rounded-lg shadow">
+    <div className="p-6">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        <div className="bg-white p-6 rounded-xl shadow-md">
           <div className="flex items-center">
             <FiPackage className="text-pink-600 text-2xl mr-4" />
             <div>
               <h3 className="text-gray-500 text-sm font-medium">Total Products</h3>
-              <p className="text-2xl font-bold">3</p>
+              <p className="text-2xl font-bold">{stats?.totalProducts}</p>
             </div>
           </div>
         </div>
-        
-        <div className="bg-white p-6 rounded-lg shadow">
+
+        <div className="bg-white p-6 rounded-xl shadow-md">
           <div className="flex items-center">
             <FiUsers className="text-blue-600 text-2xl mr-4" />
             <div>
               <h3 className="text-gray-500 text-sm font-medium">Total Users</h3>
-              <p className="text-2xl font-bold">2</p>
+              <p className="text-2xl font-bold">{stats?.totalUsers}</p>
             </div>
           </div>
         </div>
-        
-        <div className="bg-white p-6 rounded-lg shadow">
+
+        <div className="bg-white p-6 rounded-xl shadow-md">
           <div className="flex items-center">
             <FiDollarSign className="text-green-600 text-2xl mr-4" />
             <div>
@@ -68,64 +112,40 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Product Table - Lebar penuh */}
-      <div className="bg-white shadow rounded-lg overflow-hidden w-full">
-        <div className="px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+      {/* Product Table */}
+      <div className="border rounded-xl overflow-hidden shadow-sm">
+        <div className="px-6 py-4 border-b flex justify-between items-center bg-white">
           <h2 className="text-xl font-semibold text-gray-800">Product List</h2>
-          {session?.user?.role === "admin" && (
-            <button className="flex items-center px-4 py-2 bg-pink-600 text-white rounded-md hover:bg-pink-700">
-              <FiPlus className="mr-2" />
-              Add Product
-            </button>
-          )}
         </div>
-        
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+
+        <div className="overflow-x-auto bg-white">
+          <table className="min-w-full divide-y divide-gray-200 text-sm">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-2/5">
-                  PRODUCT
+                <th className="px-6 py-3 text-left font-medium text-gray-600 uppercase tracking-wider w-1/3">
+                  Product
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">
-                  PRICE
+                <th className="px-6 py-3 text-left font-medium text-gray-600 uppercase tracking-wider w-1/3">
+                  Price
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">
-                  STOCK
+                <th className="px-6 py-3 text-left font-medium text-gray-600 uppercase tracking-wider w-1/3">
+                  Description
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">
-                  SALES
-                </th>
-                {session?.user?.role === "admin" && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-1/5">
-                    ACTIONS
-                  </th>
-                )}
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {products.map((product) => (
                 <tr key={product.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="font-medium text-gray-900">{product.name}</div>
+                  <td className="px-6 py-4 font-medium text-gray-900">
+                    {product.name}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    Rp {product.price.toLocaleString()}
+                  <td className="px-6 py-4">
+                    Rp {product.price.toLocaleString("id-ID")}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {product.stock}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {product.sales}
-                  </td>
+                  <td className="px-6 py-4">{product.desc}</td>
                   {session?.user?.role === "admin" && (
-                    <td className="px-6 py-4 whitespace-nowrap flex space-x-2">
-                      <button className="text-blue-600 hover:text-blue-900 p-1">
-                        <FiEdit />
-                      </button>
-                      <button className="text-red-600 hover:text-red-900 p-1">
-                        <FiTrash2 />
-                      </button>
+                    <td className="px-6 py-4">
+                      <div className="flex space-x-2">{/* tombol admin nanti */}</div>
                     </td>
                   )}
                 </tr>

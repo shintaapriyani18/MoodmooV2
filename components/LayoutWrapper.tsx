@@ -1,6 +1,6 @@
 'use client';
 
-import { useSession, signOut } from 'next-auth/react';  // Import useSession dan signOut
+import { useSession, signOut } from 'next-auth/react';
 import { usePathname } from "next/navigation";
 import ClientLayout from "@/components/ClientLayout";
 import Link from "next/link";
@@ -12,18 +12,17 @@ export default function LayoutWrapper({
 }: {
   children: React.ReactNode;
 }) {
-  const { data: session, status } = useSession();  // Get session data
-  const [dropdownOpen, setDropdownOpen] = useState(false);  // State to handle dropdown visibility
+  const { data: session, status } = useSession();
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const pathname = usePathname();
 
-  // List path that will hide the nav and footer
   const hideLayout = pathname.startsWith("/auth/signup") || pathname.startsWith("/auth/signin") || pathname.startsWith("/auth/verify");
 
   if (hideLayout) {
     return <>{children}</>;
   }
 
-  const toggleDropdown = () => setDropdownOpen(!dropdownOpen);  // Toggle the dropdown menu visibility
+  const toggleDropdown = () => setDropdownOpen(!dropdownOpen);
 
   return (
     <ClientLayout>
@@ -39,12 +38,16 @@ export default function LayoutWrapper({
           <Link href="/products" className="hover:text-pink-500 transition">
             Products
           </Link>
-          {/* <Link href="/profile" className="hover:text-pink-500 transition">
-            Profile
-          </Link> */}
           <Link href="/contact" className="hover:text-pink-500 transition">
             Contact
           </Link>
+
+          {/* Hanya tampil jika user login dan rolenya admin */}
+          {session?.user?.role === 'admin' && (
+            <Link href="/user" className="hover:text-pink-500 transition">
+              User
+            </Link>
+          )}
         </div>
 
         <div className="flex items-center gap-4">
@@ -52,28 +55,26 @@ export default function LayoutWrapper({
             <ShoppingCart className="w-5 h-5" />
           </Link>
 
-          {session ? (
+          {status === 'authenticated' ? (
             <div className="relative">
-              {/* Profile button */}
               <button 
                 onClick={toggleDropdown}
                 className="flex items-center gap-2 p-2 rounded-none bg-transparent hover:bg-gray-100 transition duration-300">
                 <span className="text-gray-800 text-sm">{session.user?.name}</span>
                 <img
-                  src="/avatar.jpg"  // Custom profile image (replace with dynamic if needed)
+                  src="/avatar.jpg"
                   alt="profile"
-                  className="w-6 h-6"  // Smaller avatar size
+                  className="w-6 h-6"
                 />
               </button>
 
-              {/* Dropdown menu */}
               {dropdownOpen && (
                 <div className="absolute right-0 mt-2 w-40 bg-white shadow-lg rounded-lg z-10">
                   <div className="p-2 text-gray-800 flex items-center gap-2">
                     <img
-                      src="/avatar.jpg"  // Custom profile image
+                      src="/avatar.jpg"
                       alt="profile"
-                      className="w-8 h-8"  // Smaller avatar size
+                      className="w-8 h-8"
                     />
                     <p className="font-semibold text-sm">{session.user?.name}</p>
                   </div>
