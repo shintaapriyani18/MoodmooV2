@@ -1,12 +1,14 @@
-import NextAuth from "next-auth";
-import CredentialsProvider from "next-auth/providers/credentials";
+import NextAuth, { NextAuthOptions } from "next-auth";
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcrypt";
 import { z } from "zod";
+import CredentialsProvider from "next-auth/providers/credentials";
+
+
 
 const prisma = new PrismaClient();
 
-const handler = NextAuth({
+export const authOptions: NextAuthOptions = {
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -31,11 +33,12 @@ const handler = NextAuth({
         const valid = await bcrypt.compare(password, user.password);
         if (!valid) throw new Error("Invalid password");
 
+        // Tambahkan role di return agar masuk ke token
         return {
           id: user.id,
           email: user.email,
           name: user.name,
-          role: user.role,
+          role: user.role, 
         };
       },
     }),
@@ -47,21 +50,24 @@ const handler = NextAuth({
     signIn: "/auth/signin",
   },
   secret: process.env.NEXTAUTH_SECRET,
+
   callbacks: {
     async jwt({ token, user }) {
+      // Saat login, masukkan role ke token
       if (user) {
         token.role = user.role;
       }
       return token;
     },
     async session({ session, token }) {
+      // Teruskan role dari token ke session.user
       if (token && session.user) {
         session.user.role = token.role as string;
       }
       return session;
     },
   },
-});
+};
 
-// ✅ WAJIB: ekspor GET dan POST langsung, bukan `authOptions`
+const handler = NextAuth(authOptions);
 export { handler as GET, handler as POST };

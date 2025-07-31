@@ -1,16 +1,10 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import type { NextApiRequest } from 'next';
 
-type Params = {
-  params: {
-    id: string;
-  };
-};
-
-export async function GET(_req: NextRequest, { params }: Params) {
-  const id = Number(params.id);
+// Gunakan context untuk mengambil params
+export async function GET(req: NextRequest, context: { params: { id: string } }) {
+  const id = Number(context.params.id);
   if (isNaN(id)) {
     return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
   }
@@ -26,8 +20,8 @@ export async function GET(_req: NextRequest, { params }: Params) {
   return NextResponse.json(product);
 }
 
-export async function PUT(req: NextRequest, { params }: Params) {
-  const id = Number(params.id);
+export async function PUT(req: NextRequest, context: { params: { id: string } }) {
+  const id = Number(context.params.id);
   if (isNaN(id)) {
     return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
   }
@@ -42,8 +36,8 @@ export async function PUT(req: NextRequest, { params }: Params) {
   return NextResponse.json(updated);
 }
 
-export async function DELETE(_req: NextRequest, { params }: Params) {
-  const id = Number(params.id);
+export async function DELETE(req: NextRequest, context: { params: { id: string } }) {
+  const id = Number(context.params.id);
   if (isNaN(id)) {
     return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
   }
