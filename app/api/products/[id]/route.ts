@@ -1,19 +1,15 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 
-// Type untuk parameter route dengan konversi ke number
-type RouteParams = {
-  params: {
-    id: string; // Tetap string dari URL, tapi akan dikonversi
-  };
-};
-
-export async function GET(request: Request, { params }: RouteParams) {
+export async function GET(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     const id = parseInt(params.id, 10);
     if (isNaN(id)) {
       return NextResponse.json(
-        { error: 'ID harus berupa angka' },
+        { error: 'Invalid ID format' },
         { status: 400 }
       );
     }
@@ -24,7 +20,7 @@ export async function GET(request: Request, { params }: RouteParams) {
 
     if (!product) {
       return NextResponse.json(
-        { error: 'Produk tidak ditemukan' },
+        { error: 'Product not found' },
         { status: 404 }
       );
     }
@@ -32,18 +28,21 @@ export async function GET(request: Request, { params }: RouteParams) {
     return NextResponse.json(product);
   } catch (error) {
     return NextResponse.json(
-      { error: 'Terjadi kesalahan server' },
+      { error: 'Internal server error' },
       { status: 500 }
     );
   }
 }
 
-export async function PUT(request: Request, { params }: RouteParams) {
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     const id = parseInt(params.id, 10);
     if (isNaN(id)) {
       return NextResponse.json(
-        { error: 'ID harus berupa angka' },
+        { error: 'Invalid ID format' },
         { status: 400 }
       );
     }
@@ -58,18 +57,21 @@ export async function PUT(request: Request, { params }: RouteParams) {
     return NextResponse.json(updatedProduct);
   } catch (error) {
     return NextResponse.json(
-      { error: 'Gagal memperbarui produk' },
+      { error: 'Failed to update product' },
       { status: 500 }
     );
   }
 }
 
-export async function DELETE(request: Request, { params }: RouteParams) {
+export async function DELETE(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
   try {
     const id = parseInt(params.id, 10);
     if (isNaN(id)) {
       return NextResponse.json(
-        { error: 'ID harus berupa angka' },
+        { error: 'Invalid ID format' },
         { status: 400 }
       );
     }
@@ -81,7 +83,7 @@ export async function DELETE(request: Request, { params }: RouteParams) {
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     return NextResponse.json(
-      { error: 'Gagal menghapus produk' },
+      { error: 'Failed to delete product' },
       { status: 500 }
     );
   }
