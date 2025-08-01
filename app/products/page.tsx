@@ -9,8 +9,8 @@ import { addToCart } from "@/lib/cartSlice";
 import toast, { Toaster } from "react-hot-toast";
 import { useSession } from "next-auth/react";
 
-type Products = {
-  id: number;
+type Product = {
+  id: string;
   name: string;
   price: number;
   desc: string;
@@ -21,23 +21,25 @@ export default function ProductPage() {
   const router = useRouter();
   const dispatch = useDispatch<AppDispatch>();
 
-  const [products, setProducts] = useState<Products[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [name, setName] = useState("");
   const [price, setPrice] = useState<number>(0);
   const [desc, setDesc] = useState("");
-  const [editId, setEditId] = useState<number | null>(null);
+  const [editId, setEditId] = useState<string | null>(null);
+
+  const isAdmin = session?.user?.role === "admin";
+
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
   const fetchProducts = async () => {
     const res = await fetch("/api/products");
     const data = await res.json();
     setProducts(data);
   };
-
-  useEffect(() => {
-    fetchProducts();
-  }, []);
 
   const handleAdd = async () => {
     await fetch("/api/products", {
@@ -52,6 +54,7 @@ export default function ProductPage() {
 
   const handleEdit = async () => {
     if (!editId) return;
+
     await fetch(`/api/products/${editId}`, {
       method: "PUT",
       body: JSON.stringify({ name, price, desc }),
@@ -62,7 +65,7 @@ export default function ProductPage() {
     fetchProducts();
   };
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async (id: string) => {
     await fetch(`/api/products/${id}`, {
       method: "DELETE",
     });
@@ -70,7 +73,7 @@ export default function ProductPage() {
     fetchProducts();
   };
 
-  const openEditModal = (product: Products) => {
+  const openEditModal = (product: Product) => {
     setEditId(product.id);
     setName(product.name);
     setPrice(product.price);
@@ -78,17 +81,17 @@ export default function ProductPage() {
     setShowEditModal(true);
   };
 
-  const handleAddToCart = (p: Products) => {
+  const handleAddToCart = (product: Product) => {
     if (!session) {
       router.push("/auth/signin");
       return;
     }
-    
+
     dispatch(
       addToCart({
-        id: p.id.toString(),
-        name: p.name,
-        price: p.price,
+        id: product.id,
+        name: product.name,
+        price: product.price,
         qty: 1,
       })
     );
@@ -102,12 +105,7 @@ export default function ProductPage() {
     setEditId(null);
   };
 
-  const isAdmin = session?.user?.role === "admin";
-  const isUser = session?.user?.role === "user";
-
-  if (status === "loading") {
-    return <div>Loading...</div>;
-  }
+  if (status === "loading") return <div>Loading...</div>;
 
   return (
     <section className="p-4">
@@ -124,27 +122,31 @@ export default function ProductPage() {
       )}
 
       <div className="grid md:grid-cols-3 gap-6">
-        {products.map((p) => (
+        {products.map((product) => (
           <div
-            key={p.id}
+            key={product.id}
             className="bg-white p-4 rounded-xl shadow flex flex-col items-center"
           >
-            <div className="text-2xl font-bold text-pink-500 mb-2">{p.name}</div>
+            <div className="text-2xl font-bold text-pink-500 mb-2">
+              {product.name}
+            </div>
             <h2 className="text-xl font-semibold text-pink-500 mb-1">
-              Rp {p.price.toLocaleString()}
+              Rp {product.price.toLocaleString()}
             </h2>
-            <p className="text-gray-500 text-sm text-center mb-2">{p.desc}</p>
+            <p className="text-gray-500 text-sm text-center mb-2">
+              {product.desc}
+            </p>
             <div className="flex gap-2">
               {isAdmin && (
                 <>
                   <button
-                    onClick={() => openEditModal(p)}
+                    onClick={() => openEditModal(product)}
                     className="text-green-500 hover:underline"
                   >
                     Edit
                   </button>
                   <button
-                    onClick={() => handleDelete(p.id)}
+                    onClick={() => handleDelete(product.id)}
                     className="text-red-500 hover:underline"
                   >
                     Delete
@@ -152,14 +154,14 @@ export default function ProductPage() {
                 </>
               )}
               <Link
-                href={`/products/${p.id}`}
+                href={`/products/${product.id}`}
                 className="text-blue-500 hover:underline"
               >
                 Detail
               </Link>
             </div>
             <button
-              onClick={() => handleAddToCart(p)}
+              onClick={() => handleAddToCart(product)}
               className="mt-2 px-2 py-1 bg-pink-500 text-white rounded text-sm"
             >
               + Add to Cart
@@ -199,7 +201,7 @@ export default function ProductPage() {
   );
 }
 
-// Modal Component remains the same
+// Modal Component
 type ModalProps = {
   title: string;
   onClose: () => void;
@@ -250,7 +252,10 @@ function Modal({
           <button onClick={onClose} className="border px-2 py-1 rounded">
             Cancel
           </button>
-          <button onClick={onSave} className="bg-pink-500 text-white px-2 py-1 rounded">
+          <button
+            onClick={onSave}
+            className="bg-pink-500 text-white px-2 py-1 rounded"
+          >
             Save
           </button>
         </div>

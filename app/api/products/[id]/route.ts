@@ -1,13 +1,13 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { NextResponse } from 'next/server';
 
-// GET /api/products/:id
 export async function GET(
-  req: Request,
-  { params }: { params: { id: string } }
+  _req: Request,
+  context: { params: Promise<{ id: string }> }
 ) {
-  const id = Number(params.id);
-  if (isNaN(id)) {
+  const { id } = await context.params;
+
+  if (!id) {
     return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
   }
 
@@ -16,44 +16,39 @@ export async function GET(
   });
 
   if (!product) {
-    return NextResponse.json({ error: 'Product not found' }, { status: 404 });
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
   return NextResponse.json(product);
 }
 
-// PUT /api/products/:id
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
-  const id = Number(params.id);
-  if (isNaN(id)) {
+  const { id } = await context.params;
+
+  if (!id) {
     return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
   }
 
-  const body = await req.json();
-  const { name, price, desc } = body;
+  const { name, price, desc } = await req.json();
 
   const updated = await prisma.product.update({
     where: { id },
-    data: {
-      name,
-      price,
-      desc,
-    },
+    data: { name, price, desc },
   });
 
   return NextResponse.json(updated);
 }
 
-// DELETE /api/products/:id
 export async function DELETE(
-  req: Request,
-  { params }: { params: { id: string } }
+  _req: Request,
+  context: { params: Promise<{ id: string }> }
 ) {
-  const id = Number(params.id);
-  if (isNaN(id)) {
+  const { id } = await context.params;
+
+  if (!id) {
     return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
   }
 
@@ -61,5 +56,5 @@ export async function DELETE(
     where: { id },
   });
 
-  return NextResponse.json(deleted);
+  return NextResponse.json({ success: true, data: deleted }, { status: 200 });
 }

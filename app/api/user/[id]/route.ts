@@ -1,34 +1,48 @@
 import { prisma } from '@/lib/prisma';
 import { NextResponse } from 'next/server';
-import bcrypt from "bcrypt";
+import bcrypt from 'bcrypt';
 
-export async function GET(_req: Request, context: { params: { id: string } }) {
-  const { params } = context;
-  const id = String(params.id);
+export async function GET(
+  _req: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id } = await context.params;
 
-  if (!id) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
+  if (!id) {
+    return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
+  }
 
   const user = await prisma.user.findUnique({
     where: { id },
   });
 
-  if (!user) return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  if (!user) {
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
+  }
 
   return NextResponse.json(user);
 }
 
-export async function PUT(req: Request, context: { params: { id: string } }) {
-  const { params } = context;
-  const id = String(params.id);
+export async function PUT(
+  req: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id } = await context.params;
 
-  if (!id) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
+  if (!id) {
+    return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
+  }
 
   const { name, email, role, password } = await req.json();
 
-  let updatedData: any = { name, email, role };
+  const updatedData: any = {
+    name,
+    email,
+    role,
+  };
 
   if (password && password.trim() !== '') {
-    const hashedPassword = await bcrypt.hash(password, 10); 
+    const hashedPassword = await bcrypt.hash(password, 10);
     updatedData.password = hashedPassword;
   }
 
@@ -40,15 +54,19 @@ export async function PUT(req: Request, context: { params: { id: string } }) {
   return NextResponse.json(updated);
 }
 
-export async function DELETE(_req: Request, context: { params: { id: string } }) {
-  const { params } = context;
-  const id = String(params.id);
+export async function DELETE(
+  _req: Request,
+  context: { params: Promise<{ id: string }> }
+) {
+  const { id } = await context.params;
 
-  if (!id) return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
+  if (!id) {
+    return NextResponse.json({ error: 'Invalid ID' }, { status: 400 });
+  }
 
   const deleted = await prisma.user.delete({
     where: { id },
   });
 
-  return NextResponse.json(deleted);
+  return NextResponse.json({ success: true, data: deleted }, { status: 200 });
 }

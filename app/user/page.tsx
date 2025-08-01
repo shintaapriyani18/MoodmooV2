@@ -36,14 +36,13 @@ export default function UserPage() {
   useEffect(() => {
     if (status === "loading") return;
 
-    // ❌ Jika tidak ada session atau tidak ada role
     if (!session || !session.user?.role) {
       toast.error("Unauthorized access");
       router.push("/");
       return;
     }
 
-    // ✅ Hanya admin bisa akses
+    // Hanya admin bisa akses
     if (session.user.role !== "admin") {
       toast.error("You are not authorized");
       router.push("/");
@@ -108,12 +107,12 @@ export default function UserPage() {
       <Toaster />
       <h1 className="text-4xl font-bold text-pink-600 mb-6">User Management</h1>
 
-      <button
+      {/* <button
         className="bg-pink-600 text-white px-4 py-2 rounded mb-4"
         onClick={() => setShowAddModal(true)}
       >
         + Add User
-      </button>
+      </button> */}
 
       <div className="grid md:grid-cols-2 gap-4">
         {users.map((user) => (
@@ -135,7 +134,7 @@ export default function UserPage() {
                 Delete
               </button>
               <Link
-                href={`/users/${user.id}`}
+                href={`/user/${user.id}`}
                 className="text-blue-500 hover:underline"
               >
                 Detail
