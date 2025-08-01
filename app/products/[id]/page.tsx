@@ -1,5 +1,9 @@
-export default async function ProductDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+interface ProductPageProps {
+  params: { id: string };
+}
+
+export default async function ProductDetailPage({ params }: ProductPageProps) {
+  const { id } = params; // ✅ perbaikan di sini
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
 
   let product = null;
