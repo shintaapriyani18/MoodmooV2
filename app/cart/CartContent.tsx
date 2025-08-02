@@ -3,6 +3,8 @@
 import { useSelector, useDispatch } from "react-redux";
 import { RootState, AppDispatch } from "@/lib/store";
 import { removeFromCart, clearCart } from "@/lib/cartSlice";
+import Link from "next/link";
+
 
 export default function CartContent() {
   const dispatch = useDispatch<AppDispatch>();
@@ -50,12 +52,12 @@ export default function CartContent() {
             >
               Clear Cart
             </button>
-            <button
-              onClick={() => alert("Checkout! (Simulasi)")}
-              className="px-3 py-1 bg-pink-500 text-white rounded"
+            <Link
+              href="/checkout"
+              className="px-3 py-1 bg-pink-500 text-white rounded inline-block text-center"
             >
               Checkout
-            </button>
+            </Link>
           </div>
         </div>
       )}
